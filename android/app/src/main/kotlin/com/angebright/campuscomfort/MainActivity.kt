@@ -1,4 +1,4 @@
-package com.example.campus_incident_reporter
+package com.angebright.campuscomfort
 
 import io.flutter.embedding.android.FlutterActivity
 

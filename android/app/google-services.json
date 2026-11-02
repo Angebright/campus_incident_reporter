@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1010705018960",
+    "project_id": "campus-incident-reporter-1a4fb",
+    "storage_bucket": "campus-incident-reporter-1a4fb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1010705018960:android:0a6fa09363d6f2292c2155",
+        "android_client_info": {
+          "package_name": "com.angebright.campuscomfort"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9xSTZ2nudgqDHkaP1Aj2rgold2NY8vyI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
