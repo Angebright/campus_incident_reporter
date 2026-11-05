@@ -14,6 +14,7 @@ class AuthProvider extends ChangeNotifier {
 
   final AuthService _authService;
   StreamSubscription<String?>? _subscription;
+  Timer? _errorTimer;
 
   AppUser? _user;
   bool _initializing = true;
@@ -38,7 +39,7 @@ class AuthProvider extends ChangeNotifier {
       try {
         _user = await _authService.fetchProfile(uid);
       } catch (error) {
-        _error = authErrorMessage(error);
+        _showError(authErrorMessage(error));
         _user = null;
       } finally {
         _initializing = false;
@@ -54,10 +55,10 @@ class AuthProvider extends ChangeNotifier {
     _setSubmitting(true);
     try {
       _user = await _authService.signIn(email: email, password: password);
-      _error = null;
+      _clearError();
       return true;
     } catch (error) {
-      _error = authErrorMessage(error);
+      _showError(authErrorMessage(error));
       return false;
     } finally {
       _setSubmitting(false);
@@ -78,10 +79,10 @@ class AuthProvider extends ChangeNotifier {
         password: password,
         department: department,
       );
-      _error = null;
+      _clearError();
       return true;
     } catch (error) {
-      _error = authErrorMessage(error);
+      _showError(authErrorMessage(error));
       return false;
     } finally {
       _setSubmitting(false);
@@ -92,10 +93,10 @@ class AuthProvider extends ChangeNotifier {
     _setSubmitting(true);
     try {
       await _authService.sendPasswordResetEmail(email);
-      _error = null;
+      _clearError();
       return true;
     } catch (error) {
-      _error = authErrorMessage(error);
+      _showError(authErrorMessage(error));
       return false;
     } finally {
       _setSubmitting(false);
@@ -109,9 +110,26 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void clearError() {
+    _errorTimer?.cancel();
     if (_error == null) return;
     _error = null;
     notifyListeners();
+  }
+
+  void _showError(String message) {
+    _errorTimer?.cancel();
+    _error = message;
+    notifyListeners();
+    _errorTimer = Timer(const Duration(seconds: 5), () {
+      if (_error == null) return;
+      _error = null;
+      notifyListeners();
+    });
+  }
+
+  void _clearError() {
+    _errorTimer?.cancel();
+    _error = null;
   }
 
   void _setSubmitting(bool value) {
@@ -121,6 +139,7 @@ class AuthProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _errorTimer?.cancel();
     _subscription?.cancel();
     super.dispose();
   }

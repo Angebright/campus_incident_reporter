@@ -1,7 +1,17 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
+import 'providers/auth_provider.dart';
+import 'providers/incident_provider.dart';
+import 'providers/navigation_provider.dart';
+import 'providers/staff_provider.dart';
+import 'screens/auth/auth_gate.dart';
+import 'services/auth_service.dart';
+import 'services/firebase_auth_service.dart';
+import 'services/firebase_incident_service.dart';
+import 'services/incident_service.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -13,44 +23,37 @@ Future<void> main() async {
 }
 
 class CampusComfortApp extends StatelessWidget {
-  const CampusComfortApp({super.key});
+  const CampusComfortApp({
+    super.key,
+    this.authService,
+    this.incidentService,
+  });
+
+  /// Injectable for tests; defaults to the Firebase implementation.
+  final AuthService? authService;
+  final IncidentService? incidentService;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'CampusComfort',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      home: const _SplashPlaceholder(),
-    );
-  }
-}
+    final resolvedAuth = authService ?? FirebaseAuthService();
+    final resolvedIncidents = incidentService ?? FirebaseIncidentService();
 
-class _SplashPlaceholder extends StatelessWidget {
-  const _SplashPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.apartment_rounded,
-              size: 64,
-              color: AppColors.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'CampusComfort',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                  ),
-            ),
-          ],
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider(resolvedAuth)),
+        ChangeNotifierProvider(
+          create: (_) => IncidentProvider(resolvedIncidents),
         ),
+        ChangeNotifierProvider(
+          create: (_) => StaffProvider(resolvedIncidents),
+        ),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
+      ],
+      child: MaterialApp(
+        title: 'CampusComfort',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        home: const AuthGate(),
       ),
     );
   }

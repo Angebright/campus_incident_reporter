@@ -1,12 +1,22 @@
 import 'package:campus_incident_reporter/main.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-void main() {
-  testWidgets('app renders the CampusComfort shell', (tester) async {
-    await tester.pumpWidget(const CampusComfortApp());
+import 'fakes.dart';
 
-    expect(find.text('CampusComfort'), findsOneWidget);
-    expect(find.byType(MaterialApp), findsOneWidget);
+void main() {
+  testWidgets('shows the login screen when signed out', (tester) async {
+    await tester.pumpWidget(
+      CampusComfortApp(
+        authService: FakeAuthService(),
+        incidentService: FakeIncidentService(),
+      ),
+    );
+
+    // Let the auth stream emit null and the gate rebuild out of loading.
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
   });
 }
