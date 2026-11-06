@@ -33,11 +33,11 @@ class IncidentProvider extends ChangeNotifier {
   IncidentCategory? get categoryFilter => _categoryFilter;
 
   List<Incident> get filteredIncidents => applyIncidentFilters(
-        _incidents,
-        searchQuery: _searchQuery,
-        status: _statusFilter,
-        category: _categoryFilter,
-      );
+    _incidents,
+    searchQuery: _searchQuery,
+    status: _statusFilter,
+    category: _categoryFilter,
+  );
 
   int get totalCount => _incidents.length;
   int get submittedCount => _countByStatus(IncidentStatus.submitted);
@@ -52,21 +52,44 @@ class IncidentProvider extends ChangeNotifier {
     _watchedUid = uid;
     _loading = true;
     notifyListeners();
+    _listen(uid);
+  }
 
-    _subscription?.cancel();
-    _subscription = _incidentService.watchMyIncidents(uid).listen(
-      (incidents) {
-        _incidents = incidents;
-        _loading = false;
-        _error = null;
-        notifyListeners();
-      },
-      onError: (Object error) {
-        _error = 'Could not load your reports. Please try again.';
-        _loading = false;
-        notifyListeners();
-      },
+  /// Re-subscribes to the stream so a pull-to-refresh fetches fresh data.
+  Future<void> refresh() async {
+    final uid = _watchedUid;
+    if (uid == null) return;
+    final completer = Completer<void>();
+    _listen(uid, completer: completer);
+    await completer.future.timeout(
+      const Duration(seconds: 6),
+      onTimeout: () {},
     );
+  }
+
+  void _listen(String uid, {Completer<void>? completer}) {
+    _subscription?.cancel();
+    _subscription = _incidentService
+        .watchMyIncidents(uid)
+        .listen(
+          (incidents) {
+            _incidents = incidents;
+            _loading = false;
+            _error = null;
+            notifyListeners();
+            if (completer != null && !completer.isCompleted) {
+              completer.complete();
+            }
+          },
+          onError: (Object error) {
+            _error = 'Could not load your reports. Please try again.';
+            _loading = false;
+            notifyListeners();
+            if (completer != null && !completer.isCompleted) {
+              completer.complete();
+            }
+          },
+        );
   }
 
   void setSearchQuery(String value) {

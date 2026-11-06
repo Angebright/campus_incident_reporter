@@ -62,7 +62,11 @@ class MyReportsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: _buildList(context, provider, incidents),
+            child: RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: provider.refresh,
+              child: _buildList(context, provider, incidents),
+            ),
           ),
         ],
       ),
@@ -76,6 +80,7 @@ class MyReportsScreen extends StatelessWidget {
   ) {
     if (provider.loading) {
       return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
         children: const [
           SkeletonCard(),
@@ -88,18 +93,29 @@ class MyReportsScreen extends StatelessWidget {
     }
 
     if (provider.error != null) {
-      return ErrorState(message: provider.error!);
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 80),
+        children: [ErrorState(message: provider.error!)],
+      );
     }
 
     if (incidents.isEmpty) {
-      return const EmptyState(
-        icon: Icons.search_off,
-        title: 'No matching reports',
-        message: 'Try changing your search or filters.',
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 80),
+        children: const [
+          EmptyState(
+            icon: Icons.search_off,
+            title: 'No matching reports',
+            message: 'Try changing your search or filters.',
+          ),
+        ],
       );
     }
 
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
       itemCount: incidents.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),

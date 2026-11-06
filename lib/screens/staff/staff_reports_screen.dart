@@ -4,11 +4,13 @@ import 'package:provider/provider.dart';
 import '../../models/incident.dart';
 import '../../models/incident_status.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/navigation_provider.dart';
 import '../../providers/staff_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/error_state.dart';
 import '../../widgets/incident_card.dart';
+import '../../widgets/profile_avatar.dart';
 import '../../widgets/skeleton_card.dart';
 import '../../widgets/summary_card.dart';
 import '../shared/incident_details_screen.dart';
@@ -32,21 +34,39 @@ class StaffReportsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Hello, $firstName',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Review and update campus reports.',
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    color: AppColors.textSecondary,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, $firstName 👋',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Review and update campus reports.',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ProfileAvatar(
+                      name: user?.name ?? '',
+                      onTap: () =>
+                          context.read<NavigationProvider>().setIndex(1),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 18),
                 _StatusSummaryRow(staff: staff),
@@ -62,7 +82,13 @@ class StaffReportsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Expanded(child: _buildList(context, staff, incidents)),
+          Expanded(
+            child: RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: staff.refresh,
+              child: _buildList(context, staff, incidents),
+            ),
+          ),
         ],
       ),
     );
@@ -75,6 +101,7 @@ class StaffReportsScreen extends StatelessWidget {
   ) {
     if (staff.loading) {
       return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
         children: const [
           SkeletonCard(),
@@ -87,18 +114,29 @@ class StaffReportsScreen extends StatelessWidget {
     }
 
     if (staff.error != null) {
-      return ErrorState(message: staff.error!);
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 80),
+        children: [ErrorState(message: staff.error!)],
+      );
     }
 
     if (incidents.isEmpty) {
-      return const EmptyState(
-        icon: Icons.inbox_outlined,
-        title: 'No reports found',
-        message: 'There are no reports matching this view yet.',
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 80),
+        children: const [
+          EmptyState(
+            icon: Icons.inbox_outlined,
+            title: 'No reports found',
+            message: 'There are no reports matching this view yet.',
+          ),
+        ],
       );
     }
 
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
       itemCount: incidents.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),

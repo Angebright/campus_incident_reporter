@@ -5,8 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 class AppColors {
   AppColors._();
 
-  static const Color primary = Color(0xFF0F766E);
-  static const Color primaryDark = Color(0xFF115E59);
+  static const Color primary = Color(0xFF4F46E5);
+  static const Color primaryDark = Color(0xFF4338CA);
   static const Color background = Color(0xFFF7F9FA);
   static const Color surface = Colors.white;
   static const Color textPrimary = Color(0xFF1F2937);
@@ -15,7 +15,7 @@ class AppColors {
   static const Color error = Color(0xFFDC2626);
 
   static const Color submitted = Color(0xFFF59E0B);
-  static const Color inProgress = Color(0xFF0F766E);
+  static const Color inProgress = Color(0xFF4F46E5);
   static const Color resolved = Color(0xFF16A34A);
 
   static const double radius = 14;
@@ -104,8 +104,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         hintStyle: GoogleFonts.poppins(color: AppColors.textSecondary),
         labelStyle: GoogleFonts.poppins(color: AppColors.textSecondary),
         border: OutlineInputBorder(

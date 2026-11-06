@@ -34,11 +34,11 @@ class StaffProvider extends ChangeNotifier {
   IncidentCategory? get categoryFilter => _categoryFilter;
 
   List<Incident> get filteredIncidents => applyIncidentFilters(
-        _incidents,
-        searchQuery: _searchQuery,
-        status: _statusFilter,
-        category: _categoryFilter,
-      );
+    _incidents,
+    searchQuery: _searchQuery,
+    status: _statusFilter,
+    category: _categoryFilter,
+  );
 
   int get totalCount => _incidents.length;
   int get submittedCount => _countByStatus(IncidentStatus.submitted);
@@ -53,18 +53,35 @@ class StaffProvider extends ChangeNotifier {
     _streaming = true;
     _loading = true;
     notifyListeners();
+    _listen();
+  }
 
+  /// Re-subscribes to the stream so a pull-to-refresh fetches fresh data.
+  Future<void> refresh() async {
+    if (!_streaming) return;
+    final completer = Completer<void>();
+    _listen(completer: completer);
+    await completer.future.timeout(
+      const Duration(seconds: 6),
+      onTimeout: () {},
+    );
+  }
+
+  void _listen({Completer<void>? completer}) {
+    _subscription?.cancel();
     _subscription = _incidentService.streamIncidents().listen(
       (incidents) {
         _incidents = incidents;
         _loading = false;
         _error = null;
         notifyListeners();
+        if (completer != null && !completer.isCompleted) completer.complete();
       },
       onError: (Object error) {
         _error = 'Could not load reports. Please try again.';
         _loading = false;
         notifyListeners();
+        if (completer != null && !completer.isCompleted) completer.complete();
       },
     );
   }
