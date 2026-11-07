@@ -1,4 +1,6 @@
+import 'package:campus_incident_reporter/models/incident_category.dart';
 import 'package:campus_incident_reporter/models/incident_status.dart';
+import 'package:campus_incident_reporter/providers/incident_provider.dart';
 import 'package:campus_incident_reporter/providers/navigation_provider.dart';
 import 'package:campus_incident_reporter/providers/staff_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,12 +30,12 @@ void main() {
 
   group('StaffProvider', () {
     FakeIncidentService buildService() => FakeIncidentService(
-          incidents: [
-            buildIncident(id: 'a', status: IncidentStatus.submitted),
-            buildIncident(id: 'b', status: IncidentStatus.resolved),
-            buildIncident(id: 'c', status: IncidentStatus.inProgress),
-          ],
-        );
+      incidents: [
+        buildIncident(id: 'a', status: IncidentStatus.submitted),
+        buildIncident(id: 'b', status: IncidentStatus.resolved),
+        buildIncident(id: 'c', status: IncidentStatus.inProgress),
+      ],
+    );
 
     test('streams incidents and computes status counts', () async {
       final provider = StaffProvider(buildService());
@@ -68,6 +70,45 @@ void main() {
 
       expect(success, isTrue);
       expect(provider.updating, isFalse);
+    });
+  });
+
+  group('IncidentProvider', () {
+    test('updateIncident delegates and returns trimmed values', () async {
+      final service = FakeIncidentService();
+      final provider = IncidentProvider(service);
+      final original = buildIncident(
+        id: 'x',
+        title: 'Old title',
+        description: 'Old description',
+        location: 'Hostel',
+      );
+
+      final updated = await provider.updateIncident(
+        incident: original,
+        title: '  New title  ',
+        description: '  New description  ',
+        category: IncidentCategory.electricity,
+        location: '   ',
+      );
+
+      expect(updated, isNotNull);
+      expect(updated!.title, 'New title');
+      expect(updated.description, 'New description');
+      expect(updated.category, IncidentCategory.electricity);
+      expect(updated.location, isNull);
+      expect(updated.status, original.status);
+      expect(service.lastUpdatedIncidentId, 'x');
+    });
+
+    test('deleteIncident delegates to the service', () async {
+      final service = FakeIncidentService();
+      final provider = IncidentProvider(service);
+
+      final success = await provider.deleteIncident('abc');
+
+      expect(success, isTrue);
+      expect(service.lastDeletedIncidentId, 'abc');
     });
   });
 }

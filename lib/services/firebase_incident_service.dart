@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/incident.dart';
+import '../models/incident_category.dart';
 import '../models/incident_status.dart';
 import '../models/status_entry.dart';
 import 'incident_service.dart';
@@ -8,7 +9,7 @@ import 'incident_service.dart';
 /// Firebase-backed implementation of [IncidentService].
 class FirebaseIncidentService implements IncidentService {
   FirebaseIncidentService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _firestore;
 
@@ -41,6 +42,28 @@ class FirebaseIncidentService implements IncidentService {
   @override
   Future<void> createIncident(Incident incident) {
     return _incidents.add(incident.toMap()).then((_) {});
+  }
+
+  @override
+  Future<void> updateIncident({
+    required String incidentId,
+    required String title,
+    required String description,
+    required IncidentCategory category,
+    String? location,
+  }) async {
+    await _incidents.doc(incidentId).update({
+      'title': title,
+      'description': description,
+      'category': category.key,
+      'location': location,
+      'updatedAt': DateTime.now(),
+    });
+  }
+
+  @override
+  Future<void> deleteIncident(String incidentId) {
+    return _incidents.doc(incidentId).delete();
   }
 
   @override

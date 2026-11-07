@@ -1,5 +1,6 @@
 import 'package:campus_incident_reporter/models/app_user.dart';
 import 'package:campus_incident_reporter/models/incident.dart';
+import 'package:campus_incident_reporter/models/incident_category.dart';
 import 'package:campus_incident_reporter/models/incident_status.dart';
 import 'package:campus_incident_reporter/services/auth_service.dart';
 import 'package:campus_incident_reporter/services/incident_service.dart';
@@ -58,6 +59,25 @@ class FakeIncidentService implements IncidentService {
   @override
   Future<void> createIncident(Incident incident) async {
     _incidents.add(incident);
+  }
+
+  String? lastUpdatedIncidentId;
+  String? lastDeletedIncidentId;
+
+  @override
+  Future<void> updateIncident({
+    required String incidentId,
+    required String title,
+    required String description,
+    required IncidentCategory category,
+    String? location,
+  }) async {
+    lastUpdatedIncidentId = incidentId;
+  }
+
+  @override
+  Future<void> deleteIncident(String incidentId) async {
+    lastDeletedIncidentId = incidentId;
   }
 
   @override

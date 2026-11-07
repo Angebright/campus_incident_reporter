@@ -16,6 +16,14 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff';
     }
 
+    function isReporterEditingSubmitted() {
+      return isSignedIn()
+        && resource.data.reportedBy == request.auth.uid
+        && resource.data.status == 'submitted'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['title', 'description', 'category', 'location', 'updatedAt']);
+    }
+
     match /users/{uid} {
       allow read: if isSignedIn() && request.auth.uid == uid;
       allow create: if isSignedIn()
@@ -30,8 +38,10 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.reportedBy == request.auth.uid
         && request.resource.data.status == 'submitted';
-      allow update: if isStaff();
-      allow delete: if false;
+      allow update: if isStaff() || isReporterEditingSubmitted();
+      allow delete: if isSignedIn()
+        && resource.data.reportedBy == request.auth.uid
+        && resource.data.status == 'submitted';
     }
   }
 }

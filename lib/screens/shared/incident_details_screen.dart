@@ -5,12 +5,14 @@ import '../../models/incident.dart';
 import '../../models/incident_status.dart';
 import '../../models/status_entry.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/incident_provider.dart';
 import '../../providers/staff_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/incident_style.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/status_chip.dart';
 import '../../widgets/status_timeline.dart';
+import '../student/edit_incident_screen.dart';
 import 'full_screen_image_screen.dart';
 
 /// Shared incident detail view used by both students and staff.
@@ -26,6 +28,7 @@ class IncidentDetailsScreen extends StatefulWidget {
 class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
   late Incident _incident;
   bool _updating = false;
+  bool _deleting = false;
 
   @override
   void initState() {
@@ -33,44 +36,44 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
     _incident = widget.incident;
   }
 
-  List<_StatusAction> get _actions {
-    return switch (_incident.status) {
+  List<_StatusAction> _actionsFor(IncidentStatus status) {
+    return switch (status) {
       IncidentStatus.submitted => const [
-          _StatusAction(
-            label: 'Start Progress',
-            status: IncidentStatus.inProgress,
-            primary: true,
-          ),
-          _StatusAction(
-            label: 'Mark Resolved',
-            status: IncidentStatus.resolved,
-          ),
-        ],
+        _StatusAction(
+          label: 'Start Progress',
+          status: IncidentStatus.inProgress,
+          primary: true,
+        ),
+        _StatusAction(label: 'Mark Resolved', status: IncidentStatus.resolved),
+      ],
       IncidentStatus.inProgress => const [
-          _StatusAction(
-            label: 'Mark Resolved',
-            status: IncidentStatus.resolved,
-            primary: true,
-          ),
-        ],
+        _StatusAction(
+          label: 'Mark Resolved',
+          status: IncidentStatus.resolved,
+          primary: true,
+        ),
+      ],
       IncidentStatus.resolved => const [
-          _StatusAction(
-            label: 'Reopen',
-            status: IncidentStatus.inProgress,
-            primary: true,
-          ),
-        ],
+        _StatusAction(
+          label: 'Reopen',
+          status: IncidentStatus.inProgress,
+          primary: true,
+        ),
+      ],
     };
   }
 
-  Future<void> _updateStatus(IncidentStatus newStatus) async {
+  Future<void> _updateStatus(
+    Incident incident,
+    IncidentStatus newStatus,
+  ) async {
     final auth = context.read<AuthProvider>();
     final staff = context.read<StaffProvider>();
     final changedBy = auth.user?.name ?? 'Staff';
 
     setState(() => _updating = true);
     final success = await staff.updateStatus(
-      incidentId: _incident.id,
+      incidentId: incident.id,
       newStatus: newStatus,
       changedByName: changedBy,
     );
@@ -79,11 +82,11 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
     setState(() {
       _updating = false;
       if (success) {
-        _incident = _incident.copyWith(
+        _incident = incident.copyWith(
           status: newStatus,
           updatedAt: DateTime.now(),
           statusHistory: [
-            ..._incident.statusHistory,
+            ...incident.statusHistory,
             StatusEntry(
               status: newStatus,
               changedBy: changedBy,
@@ -105,9 +108,74 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
     );
   }
 
+  Incident _resolveCurrent(BuildContext context, bool isStaff) {
+    final incidents = isStaff
+        ? context.watch<StaffProvider>().allIncidents
+        : context.watch<IncidentProvider>().allIncidents;
+    for (final incident in incidents) {
+      if (incident.id == _incident.id) return incident;
+    }
+    return _incident;
+  }
+
+  Future<void> _edit(Incident incident) async {
+    final updated = await Navigator.of(context).push<Incident>(
+      MaterialPageRoute(builder: (_) => EditIncidentScreen(incident: incident)),
+    );
+    if (updated != null && mounted) {
+      setState(() => _incident = updated);
+    }
+  }
+
+  Future<void> _delete(Incident incident) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete report?'),
+        content: const Text('This report will be permanently removed.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _deleting = true);
+    final success = await context.read<IncidentProvider>().deleteIncident(
+      incident.id,
+    );
+    if (!mounted) return;
+    setState(() => _deleting = false);
+
+    if (success) {
+      Navigator.of(context).pop();
+      messenger.showSnackBar(const SnackBar(content: Text('Report deleted')));
+    } else {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Could not delete the report. Please try again.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isStaff = context.watch<AuthProvider>().isStaff;
+    final auth = context.watch<AuthProvider>();
+    final isStaff = auth.isStaff;
+    final incident = _resolveCurrent(context, isStaff);
+    final isReporter = auth.user?.uid == incident.reportedBy;
+    final canModify =
+        !isStaff && isReporter && incident.status == IncidentStatus.submitted;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Report details')),
@@ -116,30 +184,29 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _HeaderCard(incident: _incident),
+            _HeaderCard(incident: incident),
             const SizedBox(height: 20),
             _SectionCard(
               title: 'Progress',
               child: Padding(
                 padding: const EdgeInsets.only(top: 6, bottom: 4),
-                child: StatusTimeline(current: _incident.status),
+                child: StatusTimeline(current: incident.status),
               ),
             ),
-            if (_incident.imageUrl != null &&
-                _incident.imageUrl!.trim().isNotEmpty) ...[
+            if (incident.imageUrl != null &&
+                incident.imageUrl!.trim().isNotEmpty) ...[
               const SizedBox(height: 20),
               GestureDetector(
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => FullScreenImageScreen(
-                      imageUrl: _incident.imageUrl!,
-                    ),
+                    builder: (_) =>
+                        FullScreenImageScreen(imageUrl: incident.imageUrl!),
                   ),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(AppColors.radius),
                   child: Image.network(
-                    _incident.imageUrl!,
+                    incident.imageUrl!,
                     height: 200,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -153,7 +220,7 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
             _SectionCard(
               title: 'Description',
               child: Text(
-                _incident.description,
+                incident.description,
                 style: const TextStyle(
                   fontSize: 14,
                   height: 1.55,
@@ -166,7 +233,7 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
               title: 'Status history',
               child: Column(
                 children: [
-                  for (final entry in _incident.statusHistory.reversed)
+                  for (final entry in incident.statusHistory.reversed)
                     _HistoryTile(entry: entry),
                 ],
               ),
@@ -174,12 +241,19 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
           ],
         ),
       ),
-      bottomNavigationBar:
-          isStaff ? _StaffActionBar(
-            actions: _actions,
-            busy: _updating,
-            onSelected: _updateStatus,
-          ) : null,
+      bottomNavigationBar: isStaff
+          ? _StaffActionBar(
+              actions: _actionsFor(incident.status),
+              busy: _updating,
+              onSelected: (status) => _updateStatus(incident, status),
+            )
+          : canModify
+          ? _StudentActionBar(
+              busy: _deleting,
+              onEdit: () => _edit(incident),
+              onDelete: () => _delete(incident),
+            )
+          : null,
     );
   }
 }
@@ -307,10 +381,7 @@ class _Pill extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(fontSize: 12, color: color),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: color)),
         ],
       ),
     );
@@ -430,8 +501,9 @@ class _StaffActionBar extends StatelessWidget {
               Expanded(
                 child: actions[i].primary
                     ? ElevatedButton(
-                        onPressed:
-                            busy ? null : () => onSelected(actions[i].status),
+                        onPressed: busy
+                            ? null
+                            : () => onSelected(actions[i].status),
                         child: busy
                             ? const SizedBox(
                                 width: 20,
@@ -444,12 +516,70 @@ class _StaffActionBar extends StatelessWidget {
                             : Text(actions[i].label),
                       )
                     : OutlinedButton(
-                        onPressed:
-                            busy ? null : () => onSelected(actions[i].status),
+                        onPressed: busy
+                            ? null
+                            : () => onSelected(actions[i].status),
                         child: Text(actions[i].label),
                       ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StudentActionBar extends StatelessWidget {
+  const _StudentActionBar({
+    required this.busy,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final bool busy;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.border)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: busy ? null : onEdit,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Edit'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: busy ? null : onDelete,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                ),
+                icon: busy
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.delete_outline, size: 18),
+                label: const Text('Delete'),
+              ),
+            ),
           ],
         ),
       ),

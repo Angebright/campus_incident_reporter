@@ -156,6 +156,53 @@ class IncidentProvider extends ChangeNotifier {
     }
   }
 
+  Future<Incident?> updateIncident({
+    required Incident incident,
+    required String title,
+    required String description,
+    required IncidentCategory category,
+    String? location,
+  }) async {
+    final trimmedLocation = (location == null || location.trim().isEmpty)
+        ? null
+        : location.trim();
+
+    try {
+      await _incidentService.updateIncident(
+        incidentId: incident.id,
+        title: title.trim(),
+        description: description.trim(),
+        category: category,
+        location: trimmedLocation,
+      );
+      return Incident(
+        id: incident.id,
+        title: title.trim(),
+        description: description.trim(),
+        category: category,
+        status: incident.status,
+        reportedBy: incident.reportedBy,
+        reportedByName: incident.reportedByName,
+        statusHistory: incident.statusHistory,
+        createdAt: incident.createdAt,
+        location: trimmedLocation,
+        imageUrl: incident.imageUrl,
+        updatedAt: DateTime.now(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> deleteIncident(String incidentId) async {
+    try {
+      await _incidentService.deleteIncident(incidentId);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();
