@@ -19,6 +19,7 @@ abstract class IncidentService {
     required String title,
     required String description,
     required IncidentCategory category,
+    required String? imageUrl,
     String? location,
   });
 

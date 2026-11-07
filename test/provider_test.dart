@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:campus_incident_reporter/models/incident_category.dart';
 import 'package:campus_incident_reporter/models/incident_status.dart';
 import 'package:campus_incident_reporter/providers/incident_provider.dart';
@@ -89,6 +91,7 @@ void main() {
         title: '  New title  ',
         description: '  New description  ',
         category: IncidentCategory.electricity,
+        imageUrl: 'https://res.cloudinary.com/demo/new.jpg',
         location: '   ',
       );
 
@@ -97,8 +100,13 @@ void main() {
       expect(updated.description, 'New description');
       expect(updated.category, IncidentCategory.electricity);
       expect(updated.location, isNull);
+      expect(updated.imageUrl, 'https://res.cloudinary.com/demo/new.jpg');
       expect(updated.status, original.status);
       expect(service.lastUpdatedIncidentId, 'x');
+      expect(
+        service.lastUpdatedImageUrl,
+        'https://res.cloudinary.com/demo/new.jpg',
+      );
     });
 
     test('deleteIncident delegates to the service', () async {
@@ -109,6 +117,36 @@ void main() {
 
       expect(success, isTrue);
       expect(service.lastDeletedIncidentId, 'abc');
+    });
+
+    test('uploadImage returns the uploaded URL', () async {
+      final provider = IncidentProvider(
+        FakeIncidentService(),
+        imageUploadService: FakeImageUploadService(
+          url: 'https://res.cloudinary.com/demo/uploaded.jpg',
+        ),
+      );
+
+      final url = await provider.uploadImage(
+        bytes: Uint8List.fromList([1, 2, 3]),
+        filename: 'photo.jpg',
+      );
+
+      expect(url, 'https://res.cloudinary.com/demo/uploaded.jpg');
+    });
+
+    test('uploadImage returns null when the upload fails', () async {
+      final provider = IncidentProvider(
+        FakeIncidentService(),
+        imageUploadService: FakeImageUploadService(fail: true),
+      );
+
+      final url = await provider.uploadImage(
+        bytes: Uint8List.fromList([1, 2, 3]),
+        filename: 'photo.jpg',
+      );
+
+      expect(url, isNull);
     });
   });
 }

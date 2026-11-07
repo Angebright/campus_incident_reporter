@@ -50,12 +50,14 @@ class FirebaseIncidentService implements IncidentService {
     required String title,
     required String description,
     required IncidentCategory category,
+    required String? imageUrl,
     String? location,
   }) async {
     await _incidents.doc(incidentId).update({
       'title': title,
       'description': description,
       'category': category.key,
+      'imageUrl': imageUrl,
       'location': location,
       'updatedAt': DateTime.now(),
     });

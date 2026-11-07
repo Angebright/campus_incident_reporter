@@ -7,14 +7,21 @@ import '../models/incident.dart';
 import '../models/incident_category.dart';
 import '../models/incident_status.dart';
 import '../models/status_entry.dart';
+import '../services/cloudinary_image_upload_service.dart';
+import '../services/image_upload_service.dart';
 import '../services/incident_service.dart';
 import '../utils/incident_filters.dart';
 
 /// Owns the signed-in student's reports plus their search/filter state.
 class IncidentProvider extends ChangeNotifier {
-  IncidentProvider(this._incidentService);
+  IncidentProvider(
+    this._incidentService, {
+    ImageUploadService? imageUploadService,
+  }) : _imageUploadService =
+           imageUploadService ?? CloudinaryImageUploadService();
 
   final IncidentService _incidentService;
+  final ImageUploadService _imageUploadService;
   StreamSubscription<List<Incident>>? _subscription;
 
   List<Incident> _incidents = const [];
@@ -156,11 +163,23 @@ class IncidentProvider extends ChangeNotifier {
     }
   }
 
+  Future<String?> uploadImage({
+    required Uint8List bytes,
+    required String filename,
+  }) async {
+    try {
+      return await _imageUploadService.upload(bytes: bytes, filename: filename);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<Incident?> updateIncident({
     required Incident incident,
     required String title,
     required String description,
     required IncidentCategory category,
+    required String? imageUrl,
     String? location,
   }) async {
     final trimmedLocation = (location == null || location.trim().isEmpty)
@@ -173,6 +192,7 @@ class IncidentProvider extends ChangeNotifier {
         title: title.trim(),
         description: description.trim(),
         category: category,
+        imageUrl: imageUrl,
         location: trimmedLocation,
       );
       return Incident(
@@ -186,7 +206,7 @@ class IncidentProvider extends ChangeNotifier {
         statusHistory: incident.statusHistory,
         createdAt: incident.createdAt,
         location: trimmedLocation,
-        imageUrl: incident.imageUrl,
+        imageUrl: imageUrl,
         updatedAt: DateTime.now(),
       );
     } catch (_) {

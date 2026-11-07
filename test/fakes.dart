@@ -1,8 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:campus_incident_reporter/models/app_user.dart';
 import 'package:campus_incident_reporter/models/incident.dart';
 import 'package:campus_incident_reporter/models/incident_category.dart';
 import 'package:campus_incident_reporter/models/incident_status.dart';
 import 'package:campus_incident_reporter/services/auth_service.dart';
+import 'package:campus_incident_reporter/services/image_upload_service.dart';
 import 'package:campus_incident_reporter/services/incident_service.dart';
 
 class FakeAuthService implements AuthService {
@@ -63,6 +66,7 @@ class FakeIncidentService implements IncidentService {
 
   String? lastUpdatedIncidentId;
   String? lastDeletedIncidentId;
+  String? lastUpdatedImageUrl;
 
   @override
   Future<void> updateIncident({
@@ -70,9 +74,11 @@ class FakeIncidentService implements IncidentService {
     required String title,
     required String description,
     required IncidentCategory category,
+    required String? imageUrl,
     String? location,
   }) async {
     lastUpdatedIncidentId = incidentId;
+    lastUpdatedImageUrl = imageUrl;
   }
 
   @override
@@ -86,4 +92,25 @@ class FakeIncidentService implements IncidentService {
     required IncidentStatus newStatus,
     required String changedByName,
   }) async {}
+}
+
+class FakeImageUploadService implements ImageUploadService {
+  FakeImageUploadService({
+    this.url = 'https://res.cloudinary.com/demo/image/upload/sample.jpg',
+    this.fail = false,
+  });
+
+  final String url;
+  final bool fail;
+
+  @override
+  Future<String> upload({
+    required Uint8List bytes,
+    required String filename,
+  }) async {
+    if (fail) {
+      throw Exception('Upload failed');
+    }
+    return url;
+  }
 }

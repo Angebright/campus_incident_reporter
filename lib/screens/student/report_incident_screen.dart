@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +9,7 @@ import '../../providers/navigation_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/incident_style.dart';
 import '../../utils/validators.dart';
+import '../../widgets/photo_field.dart';
 
 class ReportIncidentScreen extends StatefulWidget {
   const ReportIncidentScreen({super.key});
@@ -113,15 +112,36 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
     final reporter = context.read<AuthProvider>().user;
     if (reporter == null) return;
 
+    final provider = context.read<IncidentProvider>();
     setState(() => _submitting = true);
-    final success = await context.read<IncidentProvider>().submitIncident(
-          reporter: reporter,
-          title: _titleController.text,
-          description: _descriptionController.text,
-          category: _category,
-          location: _resolvedLocation(),
-          imageUrl: null,
+
+    String? imageUrl;
+    if (_pickedImage != null) {
+      final bytes = await _pickedImage!.readAsBytes();
+      imageUrl = await provider.uploadImage(
+        bytes: bytes,
+        filename: _pickedImage!.name,
+      );
+      if (!mounted) return;
+      if (imageUrl == null) {
+        setState(() => _submitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not upload the photo. Please try again.'),
+          ),
         );
+        return;
+      }
+    }
+
+    final success = await provider.submitIncident(
+      reporter: reporter,
+      title: _titleController.text,
+      description: _descriptionController.text,
+      category: _category,
+      location: _resolvedLocation(),
+      imageUrl: imageUrl,
+    );
     if (!mounted) return;
     setState(() => _submitting = false);
 
@@ -173,7 +193,10 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
               const SizedBox(height: 4),
               const Text(
                 'Tell us what needs attention on campus.',
-                style: TextStyle(fontSize: 13.5, color: AppColors.textSecondary),
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 22),
               const _FieldLabel('Category'),
@@ -248,15 +271,10 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
               const SizedBox(height: 22),
               const _FieldLabel('Photo (optional)'),
               const SizedBox(height: 10),
-              _PhotoField(
+              PhotoField(
                 pickedImage: _pickedImage,
                 onAdd: _showPhotoOptions,
                 onRemove: () => setState(() => _pickedImage = null),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Photos are previewed only and are not uploaded in this build.',
-                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 28),
               ElevatedButton(
@@ -345,89 +363,6 @@ class _CategoryTile extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _PhotoField extends StatelessWidget {
-  const _PhotoField({
-    required this.pickedImage,
-    required this.onAdd,
-    required this.onRemove,
-  });
-
-  final XFile? pickedImage;
-  final VoidCallback onAdd;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    if (pickedImage == null) {
-      return GestureDetector(
-        onTap: onAdd,
-        child: Container(
-          height: 120,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppColors.radius),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.add_a_photo_outlined,
-                color: AppColors.primary,
-                size: 26,
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Add a photo',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(AppColors.radius),
-          child: Image.file(
-            File(pickedImage!.path),
-            height: 180,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              height: 180,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppColors.radius),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Center(
-                child: Text(
-                  'Preview unavailable',
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 8,
-          right: 8,
-          child: IconButton.filledTonal(
-            onPressed: onRemove,
-            icon: const Icon(Icons.close, size: 18),
-          ),
-        ),
-      ],
     );
   }
 }

@@ -21,7 +21,7 @@ service cloud.firestore {
         && resource.data.reportedBy == request.auth.uid
         && resource.data.status == 'submitted'
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['title', 'description', 'category', 'location', 'updatedAt']);
+             .hasOnly(['title', 'description', 'category', 'location', 'imageUrl', 'updatedAt']);
     }
 
     match /users/{uid} {

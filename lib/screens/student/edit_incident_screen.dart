@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/incident.dart';
@@ -7,6 +8,7 @@ import '../../providers/incident_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/incident_style.dart';
 import '../../utils/validators.dart';
+import '../../widgets/photo_field.dart';
 
 /// Lets a student edit a report they submitted while it is still submitted.
 class EditIncidentScreen extends StatefulWidget {
@@ -37,6 +39,8 @@ class _EditIncidentScreenState extends State<EditIncidentScreen> {
   late IncidentCategory _category;
   String? _location;
   bool _saving = false;
+  XFile? _newPhoto;
+  bool _removeExistingPhoto = false;
 
   @override
   void initState() {
@@ -76,16 +80,103 @@ class _EditIncidentScreenState extends State<EditIncidentScreen> {
     return _location;
   }
 
+  Future<void> _pickPhoto(ImageSource source) async {
+    try {
+      final file = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 1600,
+        imageQuality: 80,
+      );
+      if (file != null && mounted) {
+        setState(() {
+          _newPhoto = file;
+          _removeExistingPhoto = false;
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not access the photo picker.')),
+      );
+    }
+  }
+
+  void _showPhotoOptions() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Choose from gallery'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _pickPhoto(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Take a photo'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _pickPhoto(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _removePhoto() {
+    setState(() {
+      if (_newPhoto != null) {
+        _newPhoto = null;
+      } else {
+        _removeExistingPhoto = true;
+      }
+    });
+  }
+
+  String? get _visibleImageUrl =>
+      _removeExistingPhoto ? null : widget.incident.imageUrl;
+
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
+    final provider = context.read<IncidentProvider>();
     setState(() => _saving = true);
-    final updated = await context.read<IncidentProvider>().updateIncident(
+
+    String? imageUrl = _visibleImageUrl;
+    if (_newPhoto != null) {
+      final bytes = await _newPhoto!.readAsBytes();
+      imageUrl = await provider.uploadImage(
+        bytes: bytes,
+        filename: _newPhoto!.name,
+      );
+      if (!mounted) return;
+      if (imageUrl == null) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not upload the photo. Please try again.'),
+          ),
+        );
+        return;
+      }
+    }
+
+    final updated = await provider.updateIncident(
       incident: widget.incident,
       title: _titleController.text,
       description: _descriptionController.text,
       category: _category,
+      imageUrl: imageUrl,
       location: _resolvedLocation(),
     );
     if (!mounted) return;
@@ -182,6 +273,15 @@ class _EditIncidentScreenState extends State<EditIncidentScreen> {
                   ),
                 ),
               ],
+              const SizedBox(height: 22),
+              const _FieldLabel('Photo (optional)'),
+              const SizedBox(height: 10),
+              PhotoField(
+                pickedImage: _newPhoto,
+                imageUrl: _visibleImageUrl,
+                onAdd: _showPhotoOptions,
+                onRemove: _removePhoto,
+              ),
               const SizedBox(height: 28),
               ElevatedButton(
                 onPressed: _saving ? null : _save,
