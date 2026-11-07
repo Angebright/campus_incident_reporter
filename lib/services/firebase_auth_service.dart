@@ -7,11 +7,9 @@ import 'auth_service.dart';
 
 /// Firebase-backed implementation of [AuthService].
 class FirebaseAuthService implements AuthService {
-  FirebaseAuthService({
-    FirebaseAuth? auth,
-    FirebaseFirestore? firestore,
-  })  : _auth = auth ?? FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+  FirebaseAuthService({FirebaseAuth? auth, FirebaseFirestore? firestore})
+    : _auth = auth ?? FirebaseAuth.instance,
+      _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
@@ -86,9 +84,4 @@ class FirebaseAuthService implements AuthService {
 
   @override
   Future<void> signOut() => _auth.signOut();
-
-  @override
-  Future<void> sendPasswordResetEmail(String email) {
-    return _auth.sendPasswordResetEmail(email: email.trim());
-  }
 }

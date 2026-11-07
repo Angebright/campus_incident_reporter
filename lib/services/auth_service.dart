@@ -19,10 +19,7 @@ abstract class AuthService {
   /// Loads `users/{uid}`; returns null if the profile does not exist.
   Future<AppUser?> fetchProfile(String uid);
 
-  Future<AppUser> signIn({
-    required String email,
-    required String password,
-  });
+  Future<AppUser> signIn({required String email, required String password});
 
   Future<AppUser> registerStudent({
     required String name,
@@ -32,6 +29,4 @@ abstract class AuthService {
   });
 
   Future<void> signOut();
-
-  Future<void> sendPasswordResetEmail(String email);
 }

@@ -7,7 +7,7 @@ Built with Flutter, Firebase (Authentication and Cloud Firestore) and Provider.
 
 ## Features
 
-- Email/password authentication with student self sign-up and password reset.
+- Email/password authentication with student self sign-up.
 - Two roles: students submit reports; staff review reports and update status.
 - Submit a report with category, title, description, location and an optional
   photo preview.

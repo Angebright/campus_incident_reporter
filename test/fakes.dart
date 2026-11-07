@@ -39,14 +39,11 @@ class FakeAuthService implements AuthService {
 
   @override
   Future<void> signOut() async {}
-
-  @override
-  Future<void> sendPasswordResetEmail(String email) async {}
 }
 
 class FakeIncidentService implements IncidentService {
   FakeIncidentService({List<Incident>? incidents})
-      : _incidents = incidents ?? <Incident>[];
+    : _incidents = incidents ?? <Incident>[];
 
   final List<Incident> _incidents;
 

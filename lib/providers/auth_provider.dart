@@ -48,10 +48,7 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> signIn({required String email, required String password}) async {
     _setSubmitting(true);
     try {
       _user = await _authService.signIn(email: email, password: password);
@@ -79,20 +76,6 @@ class AuthProvider extends ChangeNotifier {
         password: password,
         department: department,
       );
-      _clearError();
-      return true;
-    } catch (error) {
-      _showError(authErrorMessage(error));
-      return false;
-    } finally {
-      _setSubmitting(false);
-    }
-  }
-
-  Future<bool> sendPasswordResetEmail(String email) async {
-    _setSubmitting(true);
-    try {
-      await _authService.sendPasswordResetEmail(email);
       _clearError();
       return true;
     } catch (error) {

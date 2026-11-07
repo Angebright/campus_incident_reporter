@@ -37,62 +37,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     await context.read<AuthProvider>().signIn(
-          email: _emailController.text,
-          password: _passwordController.text,
-        );
-  }
-
-  Future<void> _showForgotPassword() async {
-    final controller = TextEditingController(text: _emailController.text);
-    final email = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Reset password'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Enter your account email and we will send a reset link.',
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(hintText: 'Email address'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(controller.text.trim()),
-              child: const Text('Send link'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (email == null || email.isEmpty || !mounted) return;
-
-    final provider = context.read<AuthProvider>();
-    final success = await provider.sendPasswordResetEmail(email);
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'Reset link sent to $email'
-              : (provider.error ?? 'Could not send the reset email'),
-        ),
-      ),
+      email: _emailController.text,
+      password: _passwordController.text,
     );
   }
 
@@ -113,7 +59,8 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (provider.error != null) AuthErrorBanner(message: provider.error!),
+            if (provider.error != null)
+              AuthErrorBanner(message: provider.error!),
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
@@ -145,13 +92,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         : Icons.visibility_outlined,
                   ),
                 ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: provider.submitting ? null : _showForgotPassword,
-                child: const Text('Forgot password?'),
               ),
             ),
             const SizedBox(height: 4),
@@ -203,9 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const SignupScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const SignupScreen()),
                     );
                   },
                   child: const Text('Sign up'),
