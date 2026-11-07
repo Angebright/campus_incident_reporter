@@ -52,8 +52,10 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(999),
@@ -83,7 +85,7 @@ class ProfileScreen extends StatelessWidget {
                 _InfoRow(
                   icon: Icons.mail_outline,
                   label: 'Email',
-                  value: user?.email ?? '—',
+                  value: user?.email ?? 'Not set',
                 ),
                 const Divider(height: 24),
                 _InfoRow(
@@ -97,7 +99,9 @@ class ProfileScreen extends StatelessWidget {
                 _InfoRow(
                   icon: Icons.calendar_today_outlined,
                   label: 'Member since',
-                  value: user != null ? formatShortDate(user.createdAt) : '—',
+                  value: user != null
+                      ? formatShortDate(user.createdAt)
+                      : 'Not set',
                 ),
               ],
             ),
@@ -111,9 +115,7 @@ class ProfileScreen extends StatelessWidget {
               style: TextStyle(color: AppColors.error),
             ),
             style: OutlinedButton.styleFrom(
-              side: BorderSide(
-                color: AppColors.error.withValues(alpha: 0.4),
-              ),
+              side: BorderSide(color: AppColors.error.withValues(alpha: 0.4)),
             ),
           ),
           const SizedBox(height: 20),
