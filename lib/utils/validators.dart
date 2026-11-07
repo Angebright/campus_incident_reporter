@@ -2,14 +2,45 @@
 class Validators {
   Validators._();
 
-  static final RegExp _emailRegExp =
-      RegExp(r'^[\w.\-+]+@([\w\-]+\.)+[\w\-]{2,}$');
+  static final RegExp _studentEmailRegExp = RegExp(
+    r'^[A-Za-z]\.[^@\s]+@alustudent\.com$',
+    caseSensitive: false,
+  );
+  static final RegExp _staffEmailRegExp = RegExp(
+    r'^[^@\s]+@alueducation\.com$',
+    caseSensitive: false,
+  );
 
-  static String? email(String? value) {
+  /// ALU student email: one initial character, a dot, a string, then
+  /// `@alustudent.com` (for example `a.muhawenim@alustudent.com`).
+  static String? studentEmail(String? value) {
     final input = value?.trim() ?? '';
     if (input.isEmpty) return 'Email is required';
-    if (!_emailRegExp.hasMatch(input)) return 'Enter a valid email address';
+    if (!_studentEmailRegExp.hasMatch(input)) {
+      return 'Use your ALU student email (e.g. a.lastname@alustudent.com)';
+    }
     return null;
+  }
+
+  /// ALU staff email: any local part followed by `@alueducation.com`.
+  static String? staffEmail(String? value) {
+    final input = value?.trim() ?? '';
+    if (input.isEmpty) return 'Email is required';
+    if (!_staffEmailRegExp.hasMatch(input)) {
+      return 'Use your ALU staff email (e.g. name@alueducation.com)';
+    }
+    return null;
+  }
+
+  /// Accepts either an ALU student or staff email.
+  static String? aluEmail(String? value) {
+    final input = value?.trim() ?? '';
+    if (input.isEmpty) return 'Email is required';
+    if (_studentEmailRegExp.hasMatch(input) ||
+        _staffEmailRegExp.hasMatch(input)) {
+      return null;
+    }
+    return 'Use your ALU email (a.lastname@alustudent.com or name@alueducation.com)';
   }
 
   static String? password(String? value) {

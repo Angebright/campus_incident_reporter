@@ -61,7 +61,8 @@ class _SignupScreenState extends State<SignupScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (provider.error != null) AuthErrorBanner(message: provider.error!),
+            if (provider.error != null)
+              AuthErrorBanner(message: provider.error!),
             TextFormField(
               controller: _nameController,
               textInputAction: TextInputAction.next,
@@ -77,9 +78,10 @@ class _SignupScreenState extends State<SignupScreen> {
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.email],
-              validator: Validators.email,
+              validator: Validators.studentEmail,
               decoration: const InputDecoration(
-                hintText: 'Email address',
+                hintText: 'a.lastname@alustudent.com',
+                helperText: 'Use your ALU student email',
                 prefixIcon: Icon(Icons.mail_outline),
               ),
             ),
@@ -118,10 +120,8 @@ class _SignupScreenState extends State<SignupScreen> {
               controller: _confirmController,
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.done,
-              validator: (value) => Validators.confirmPassword(
-                value,
-                _passwordController.text,
-              ),
+              validator: (value) =>
+                  Validators.confirmPassword(value, _passwordController.text),
               onFieldSubmitted: (_) => _submit(),
               decoration: const InputDecoration(
                 hintText: 'Confirm password',

@@ -15,9 +15,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  static const _demoStudentEmail = 'student@campuscomfort.app';
+  static const _demoStudentEmail = 'd.student@alustudent.com';
   static const _demoStudentPassword = 'Campus123';
-  static const _demoStaffEmail = 'staff@campuscomfort.app';
+  static const _demoStaffEmail = 'bernard@alueducation.com';
   static const _demoStaffPassword = 'Campus123';
 
   final _formKey = GlobalKey<FormState>();
@@ -66,9 +66,9 @@ class _LoginScreenState extends State<LoginScreen> {
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.email],
-              validator: Validators.email,
+              validator: Validators.aluEmail,
               decoration: const InputDecoration(
-                hintText: 'Email address',
+                hintText: 'ALU email address',
                 prefixIcon: Icon(Icons.mail_outline),
               ),
             ),

@@ -6,6 +6,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAluStudentEmail() {
+      return request.resource.data.email is string
+        && request.resource.data.email.matches('(?i)^[a-z]\\.[^@\\s]+@alustudent\\.com$');
+    }
+
     function isStaff() {
       return isSignedIn()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff';
@@ -15,7 +20,8 @@ service cloud.firestore {
       allow read: if isSignedIn() && request.auth.uid == uid;
       allow create: if isSignedIn()
         && request.auth.uid == uid
-        && request.resource.data.role == 'student';
+        && request.resource.data.role == 'student'
+        && isAluStudentEmail();
       allow update, delete: if false;
     }
 

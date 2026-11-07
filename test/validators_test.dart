@@ -5,10 +5,34 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Validators', () {
-    test('email', () {
-      expect(Validators.email('alice@campuscomfort.app'), isNull);
-      expect(Validators.email(''), isNotNull);
-      expect(Validators.email('not-an-email'), isNotNull);
+    test('studentEmail accepts the ALU student format', () {
+      expect(Validators.studentEmail('a.muhawenim@alustudent.com'), isNull);
+      expect(Validators.studentEmail('A.Muhawenimana@alustudent.com'), isNull);
+      expect(Validators.studentEmail('j.doe@alustudent.com'), isNull);
+    });
+
+    test('studentEmail rejects wrong domains and shapes', () {
+      expect(Validators.studentEmail(''), isNotNull);
+      expect(Validators.studentEmail('alice@campuscomfort.app'), isNotNull);
+      expect(Validators.studentEmail('amuhawenim@alustudent.com'), isNotNull);
+      expect(
+        Validators.studentEmail('a.muhawenim@alueducation.com'),
+        isNotNull,
+      );
+      expect(Validators.studentEmail('1.muhawenim@alustudent.com'), isNotNull);
+    });
+
+    test('staffEmail accepts the ALU staff domain', () {
+      expect(Validators.staffEmail('bernard@alueducation.com'), isNull);
+      expect(Validators.staffEmail('a.student@alustudent.com'), isNotNull);
+      expect(Validators.staffEmail(''), isNotNull);
+    });
+
+    test('aluEmail accepts both ALU domains only', () {
+      expect(Validators.aluEmail('a.muhawenim@alustudent.com'), isNull);
+      expect(Validators.aluEmail('bernard@alueducation.com'), isNull);
+      expect(Validators.aluEmail('someone@gmail.com'), isNotNull);
+      expect(Validators.aluEmail(''), isNotNull);
     });
 
     test('password', () {

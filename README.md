@@ -79,8 +79,11 @@ The Firebase backend is already set up and includes two demo accounts:
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Staff | staff@campuscomfort.app | Campus123 |
-| Student | student@campuscomfort.app | Campus123 |
+| Staff | bernard@alueducation.com | Campus123 |
+| Student | d.student@alustudent.com | Campus123 |
+
+Only ALU emails are accepted: students use `@alustudent.com` (in the form
+`a.lastname@alustudent.com`) and staff use `@alueducation.com`.
 
 You can also create a new student account from the Sign up screen.
 
